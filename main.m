@@ -8,16 +8,16 @@ alpha = 0; % parameter for modified equation, also impose noise term in full equ
 NoModified = 1; %% indicate we are using linearized eqn or not
 avgr = 0; % avgr is average gradient of c for linearized/modified equations
 %%% general parameters %%%%%%%%%
-velMode = 2; %% 1 for quasi2D and 2 for true2D velocity type, 3 for Saffman 
-
+velMode = -1; %% 1 for quasi2D and 2 for true2D velocity type, 3 for Saffman 
+             %%% -1 for quasi2D with incompressible component only 
 %kc = 0; %%% const for Saffman 
 %kc = 0.0224193; kc = 0.0448385; kc = 0.0896771; kc = 0.49995;
 kc = 0.179354;
 
 epsilon = 1e0; % epsilon = k_B*T/eta
 
-chi = 0.3993036270; % Diffusion coefficient for True2D
-%chi = 0.857/(6*pi); %0.5305164769e-1; % Diffusion coefficient for Quasi2D
+%chi = 0.3993036270; % Diffusion coefficient for True2D
+chi = 0.857/(6*pi); % Diffusion coefficient for Quasi2D
 %chi = 0.399315; % Diffusion coefficient for Saffman kc=0
 %chi = 0.292203; % Diffusion coefficient for Saffman kc=0.022
 %chi = 0.248638; % Diffusion coefficient for Saffman kc=0.044
@@ -43,8 +43,8 @@ dx = LX/(NX-1); dy = LY/(NY-1);
 %dt = 10; %% CFL~0.5
 CFL = 0.5; dt =  CFL*dx^2/chi;  %% setting dt with CFL number
 
-%T = 1.505e5; %Quasi2D
-T = 20000; % True2D
+T = 1.505e5; %Quasi2D
+%T = 20000; % True2D
 %T = 17530; % kc = 0 Saffman
 %T = 23955.9; % kc = 0.022 Saffman
 %T = 28153.4; % kc = 0.044 Saffman
@@ -52,14 +52,11 @@ T = 20000; % True2D
 %T = 47127.3; % kc = 0.179 Saffman
 %T = 101936; % kc = 0.499 Saffman
 MaxIter = floor(T/dt);  %% number of iterations
-rerunNum = 8 ;  %% times to rerun the simulation(for stage test)
+rerunNum = 16 ;  %% times to rerun the simulation(for stage test)
 
 color_Num = 2; % number of colors
 filter = 1; % use 2/3 filter or antialising?
-
 clims = [0 c_background];
-%clims = [0 c_background+1];
-
 sigma = 1; % Hydrodynamic radius of particles
 if(0)  %% set sigma by approximation(8) in notes from chi
     if(velMode==1) %% quasi2D

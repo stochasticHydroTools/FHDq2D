@@ -2,7 +2,7 @@
 
 %%% this file is used to calculate mean and errorbar data for spectrum  
 clear all;
-origin_filename = 'eps1vel1conv0noise0color_Num2VM2';
+origin_filename = 'eps1vel1conv0noise0color_Num2VM-1';
 load([origin_filename,'/parameters.mat'])
 
 filename = [origin_filename,'/',num2str(NX),'eps',num2str(epsilon),'vm',num2str(velMode),'dt',num2str(dt)];
@@ -92,7 +92,7 @@ if(1)
      
     
     legend('GR-1','GR-2','GG-1','GG-2','RR-1','RR-2')
-    if(velMode==1)%% Q2D
+    if(velMode==-1 || velMode==1)%% Q2D
         load('Q2D_first.dat');
         load('Q2D_second.dat');
         errorbar(Q2D_first(1:NX/2-1,1),Q2D_first(1:NX/2-1,2),Q2D_first(1:NX/2-1,3));
