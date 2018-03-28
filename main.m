@@ -4,20 +4,21 @@ clear all;
 %---------------------------
 NoVel = 0; % Exclude random advection in full eqn
 NoConvl =1; %% Exclude convolution term in full eqn
-alpha = 0; % parameter for modified equation, also impose noise term in full equation if not 0
+alpha = 1; % parameter for modified equation, also impose noise term in full equation if not 0
 NoModified = 1; %% indicate we are using linearized eqn or not
 avgr = 0; % avgr is average gradient of c for linearized/modified equations
 %%% general parameters %%%%%%%%%
-velMode = -1; %% 1 for quasi2D and 2 for true2D velocity type, 3 for Saffman 
-             %%% -1 for quasi2D with incompressible component only 
+velMode = 2; %% 1 for quasi2D and 2 for true2D velocity type, 3 for Saffman 
+filter_type = 1;  %%%  filter_type<0 means imposing filter in source term directly
+
 %kc = 0; %%% const for Saffman 
 %kc = 0.0224193; kc = 0.0448385; kc = 0.0896771; kc = 0.49995;
 kc = 0.179354;
 
 epsilon = 1e0; % epsilon = k_B*T/eta
 
-%chi = 0.3993036270; % Diffusion coefficient for True2D
-chi = 0.857/(6*pi); % Diffusion coefficient for Quasi2D
+chi = 0.3993036270; % Diffusion coefficient for True2D
+%chi = 0.857/(6*pi); %0.5305164769e-1; % Diffusion coefficient for Quasi2D
 %chi = 0.399315; % Diffusion coefficient for Saffman kc=0
 %chi = 0.292203; % Diffusion coefficient for Saffman kc=0.022
 %chi = 0.248638; % Diffusion coefficient for Saffman kc=0.044
@@ -30,21 +31,24 @@ uniform = 0;  %% Put a bump or just do a homogeneous initial
 proportion = 0; %% proportion of bump if exists
 
 %NX= 32; NY = 32; %% number of grids
-%NX = 64; NY = 64;
+NX = 64; NY = 64;
 %NX = 48; NY = 48;
-NX = 96; NY = 96;
+%NX = 96; NY = 96;
 %NX = 128; NY = 128;
 %NX = 192; NY = 192;
 %NX = 256; NY = 256;
+%NX = 512; NY = 512;
+
 
 LX = 560.5; LY = 560.5; %% length of area
 dx = LX/(NX-1); dy = LY/(NY-1);
 %dx = LX/(NX); dy = LY/(NY);
 %dt = 10; %% CFL~0.5
 CFL = 0.5; dt =  CFL*dx^2/chi;  %% setting dt with CFL number
+%dt = 0.05;
+%T = 1.505e5; %Quasi2D
 
-T = 1.505e5; %Quasi2D
-%T = 20000; % True2D
+T = 20000; % True2D
 %T = 17530; % kc = 0 Saffman
 %T = 23955.9; % kc = 0.022 Saffman
 %T = 28153.4; % kc = 0.044 Saffman
@@ -52,11 +56,15 @@ T = 1.505e5; %Quasi2D
 %T = 47127.3; % kc = 0.179 Saffman
 %T = 101936; % kc = 0.499 Saffman
 MaxIter = floor(T/dt);  %% number of iterations
-rerunNum = 16 ;  %% times to rerun the simulation(for stage test)
+rerunNum = 8 ;  %% times to rerun the simulation(for stage test)
 
 color_Num = 2; % number of colors
-filter = 1; % use 2/3 filter or antialising?
+filter = filter_gen(NY,NX,abs(filter_type)); 
+
+
 clims = [0 c_background];
+%clims = [0 c_background+1];
+
 sigma = 1; % Hydrodynamic radius of particles
 if(0)  %% set sigma by approximation(8) in notes from chi
     if(velMode==1) %% quasi2D
@@ -69,7 +77,7 @@ filename = ''; % prefix for file names
 
 % Control the run and what is output:
 % when gap is 0, collection of that data is skipped
-real2d_gap = floor(MaxIter/50); %% real 2d evolution movie
+real2d_gap = 2;%floor(MaxIter/50); %% real 2d evolution movie
 real_spec_2dMean_gap =  1; %% snapshot of real 2d mean and 2d spectrum
 spectrum1d_gap = 1; %% snapshot of 1d spectrum along x
 CYmean_gap = 0;  %% snapshot of c(y), mean of c on x  
@@ -156,7 +164,7 @@ if(~NoModified)
 c(:,:,1) = c(:,:,1) + c_background/2;
 c(:,:,2) = c(:,:,2) + c_background/2;
 else
-c = initial_2color(c_background, proportion, 0,NX,NY);
+c = initial_2color(c_background, proportion, 1,NX,NY);
 end
 end
 
@@ -187,12 +195,17 @@ specRR_record_half_2 = zeros((NX-2)/2,1);
 
 if(alpha~=0)  %% impose noise on initial condition
   for j = 1:color_Num
-    c(:,:,j) = c(:,:,j) + randn(NY,NX).*sqrt(alpha*c(:,:,j)/(dx*dy));   
+     noise = randn(NY,NX).*sqrt(alpha/(dx*dy));
+    if(filter_type)   
+        noise = fs2real2d(real2fs2d(noise, dx, dy).*filter, dx, dy) ;
+        imagpart_noise = max(max(imag(noise)))
+    end
+    c(:,:,j) = c(:,:,j) + noise.*c(:,:,j);
   end
 end
 
 for j = 1:color_Num
-  chat(:,:,j) = real2fs2d(c(:,:,j), dx, dy);  
+  chat(:,:,j) = real2fs2d(c(:,:,j), dx, dy);
 end
 
 % --------------------------------------------
@@ -202,8 +215,8 @@ while iter <= MaxIter
 
    for j = 1:color_Num
      c(:,:,j) = fs2real2d(chat(:,:,j), dx, dy); 
-%      imagpart = max(max(imag(c)))  %% to test
-%      minC = min(c(:)) %% to test
+     imagpart = max(max(imag(c)))  %% to test
+     minC = min(c(:)) %% to test
 
    end
    c_whole = sum(c,3);
@@ -252,14 +265,15 @@ while iter <= MaxIter
    % Update variables to time t+dt:
    
    c_whole_hat = sum(chat,3);
-   [U, V] = RandomVelocity2(NX, NY, LX, LY, KX, KY, dx, dy, epsilon, K, C1, C2);  
+   [U, V] = RandomVelocity2(NX, NY, KX, KY, dx, dy, epsilon, K, C1, C2, filter_type, filter);  
 
    % This loop changes each color in turn, but only c_whole/c_hole_hat are used to update each color
    % and this does not change throughout the time step
    % Therefore this code does an Euler-Maruyuama update of chat
    for j = 1:color_Num
      chat(:,:,j) = TimeStep_DS(chat(:,:,j),dt,dx,dy,NX,NY,LX,LY,KX,KY,iKX,iKY,Ksquare,c_whole_hat,c(:,:,j),...
-       c_background_modified,velMode,chi,NoVel,NoModified,epsilon,avgr*(-1)^(j+1),alpha,NoConvl,U,V,RXhat,RYhat,filter);
+       c_background_modified,velMode,chi,NoVel,NoModified,epsilon,avgr*(-1)^(j+1),alpha,NoConvl,U,V,RXhat,RYhat,filter_type,filter); 
+     
    end
 
 
@@ -338,7 +352,7 @@ end
 %%% save parameters for reference
 save([filename,'/parameters.mat'],'sigma','chi','c_background','dx','dy','dt','LX','LY','NoVel','NoConvl',...
     'NoModified','velMode','epsilon','alpha','avgr','uniform','proportion','NX','NY','LX','LY','MaxIter','rerunNum',...
-    'real_spec_2dMean_gap','CYmean_gap','spectrum1d_gap','color_Num','filter','c_noNoise');
+    'real_spec_2dMean_gap','CYmean_gap','spectrum1d_gap','color_Num','filter_type','c_noNoise');
 
 %%% save parameters in a txt file for easy reading
 fileID = fopen([filename,'/parameters.txt'],'w');

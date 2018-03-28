@@ -71,9 +71,12 @@ save([origin_filename,'/specRR_2_data_eps',num2str(epsilon),'_',num2str(NX),'.tx
 
 %%%% plot first and second half data 
 if(1)
-   if(filter) %% anti-aliasing
+   if(abs(filter_type)==2) %% anti-aliasing
     NX = 2*NX/3;
     NY = 2*NY/3;
+   elseif(abs(filter_type)==1)
+    NX = NX/2;
+    NY = NY/2;
    end 
    
     figure(1);clf
