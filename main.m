@@ -4,12 +4,12 @@ clear all;
 %---------------------------
 NoVel = 0; % Exclude random advection in full eqn
 NoConvl =1; %% Exclude convolution term in full eqn
-alpha = 1; % parameter for modified equation, also impose noise term in full equation if not 0
+alpha = 0; % parameter for modified equation, also impose noise term in full equation if not 0
 NoModified = 1; %% indicate we are using linearized eqn or not
 avgr = 0; % avgr is average gradient of c for linearized/modified equations
 %%% general parameters %%%%%%%%%
 velMode = 2; %% 1 for quasi2D and 2 for true2D velocity type, 3 for Saffman 
-filter_type = 1;  %%%  filter_type<0 means imposing filter in source term directly
+filter_type = 2;  %%%  filter_type<0 means imposing filter in source term directly
 
 %kc = 0; %%% const for Saffman 
 %kc = 0.0224193; kc = 0.0448385; kc = 0.0896771; kc = 0.49995;
@@ -30,7 +30,7 @@ c_background = 0.3183088885;
 uniform = 0;  %% Put a bump or just do a homogeneous initial 
 proportion = 0; %% proportion of bump if exists
 
-%NX= 32; NY = 32; %% number of grids
+%NX= 32; NY = 32; %% number of valid grids, NX NY will be increased while using filter
 NX = 64; NY = 64;
 %NX = 48; NY = 48;
 %NX = 96; NY = 96;
@@ -38,6 +38,15 @@ NX = 64; NY = 64;
 %NX = 192; NY = 192;
 %NX = 256; NY = 256;
 %NX = 512; NY = 512;
+
+
+if(filter_type == 1)  %% for 1/2 filter, increase grid number by 2
+    NX = NX*2;
+    NY = NY*2;
+elseif(filter_type == 2) %% for 2/3 filter, increase grid number by 3/2
+    NX = NX*3/2;
+    NY = NY*3/2;
+end
 
 
 LX = 560.5; LY = 560.5; %% length of area
@@ -143,7 +152,7 @@ if(mod(NY,2)==0) % Even grid size
 end
 
 
-[C1, C2] = VelKernel(velMode, K, sigma, Ksquare, kc);
+[C1, C2] = VelKernel(velMode, K, sigma, Ksquare, kc, filter_type, filter);
 
 [RXhat,RYhat] = R_dot_grad( iKX,iKY,  K, C1); %% convolution in fourier
 
@@ -164,7 +173,7 @@ if(~NoModified)
 c(:,:,1) = c(:,:,1) + c_background/2;
 c(:,:,2) = c(:,:,2) + c_background/2;
 else
-c = initial_2color(c_background, proportion, 1,NX,NY);
+c = initial_2color(c_background, proportion, 0,NX,NY);
 end
 end
 
@@ -198,7 +207,6 @@ if(alpha~=0)  %% impose noise on initial condition
      noise = randn(NY,NX).*sqrt(alpha/(dx*dy));
     if(filter_type)   
         noise = fs2real2d(real2fs2d(noise, dx, dy).*filter, dx, dy) ;
-        imagpart_noise = max(max(imag(noise)))
     end
     c(:,:,j) = c(:,:,j) + noise.*c(:,:,j);
   end
@@ -265,7 +273,7 @@ while iter <= MaxIter
    % Update variables to time t+dt:
    
    c_whole_hat = sum(chat,3);
-   [U, V] = RandomVelocity2(NX, NY, KX, KY, dx, dy, epsilon, K, C1, C2, filter_type, filter);  
+   [U, V] = RandomVelocity2(NX, NY, KX, KY, dx, dy, epsilon, K, C1, C2);  
 
    % This loop changes each color in turn, but only c_whole/c_hole_hat are used to update each color
    % and this does not change throughout the time step

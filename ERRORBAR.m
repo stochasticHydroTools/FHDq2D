@@ -2,7 +2,7 @@
 
 %%% this file is used to calculate mean and errorbar data for spectrum  
 clear all;
-origin_filename = 'eps1vel1conv0noise0color_Num2VM-1';
+origin_filename = 'eps1vel1conv0noise0color_Num2VM2';
 load([origin_filename,'/parameters.mat'])
 
 filename = [origin_filename,'/',num2str(NX),'eps',num2str(epsilon),'vm',num2str(velMode),'dt',num2str(dt)];

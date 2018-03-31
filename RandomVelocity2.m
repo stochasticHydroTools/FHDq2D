@@ -1,4 +1,4 @@
-function [U, V] = RandomVelocity2(NX, NY, KX, KY, dx, dy, epsilon, K, C1, C2, filter_type, filter)
+function [U, V] = RandomVelocity2(NX, NY, KX, KY, dx, dy, epsilon, K, C1, C2)
    % Generates a quasi-2D random velocity field
    % epsilon = k_B*T/eta 
    % Generate velocity spectrum in Fourier space:
@@ -12,13 +12,6 @@ function [U, V] = RandomVelocity2(NX, NY, KX, KY, dx, dy, epsilon, K, C1, C2, fi
    % Now compute velocity in Fourier space:
    Uhat = sqrt(2*epsilon)*( sqrt(C1).*(KX).*Zk1 + sqrt(C2).*(-KY).*Zk2 )./(K.^(3/2));
    Vhat = sqrt(2*epsilon)*( sqrt(C1).*(KY).*Zk1 + sqrt(C2).*(KX).*Zk2 )./(K.^(3/2));
-   
-  
-     
-   if(filter_type>0)
-       Uhat = Uhat .* filter;
-       Vhat = Vhat .* filter;
-   end
    
  
    % Enforce real-valued velocity by imposing conjugate symmetry:

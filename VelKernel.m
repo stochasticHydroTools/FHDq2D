@@ -1,4 +1,4 @@
-function [c1,c2] = VelKernel(hydro_kernel, k, sigma, Ksquare, kc)
+function [c1,c2] = VelKernel(hydro_kernel, k, sigma, Ksquare, kc, filter_type, filter)
 % Compute the functions c_1(k) and c_2(k) based on the type of hydrodynamics
 %   hydro_kernel: 1 for quasi2D, 2 for true2D, 3 for Saffman
 %                -1 for quasi2D with incompressible component only(c1=0)
@@ -19,6 +19,11 @@ elseif(hydro_kernel==2)
 elseif(hydro_kernel==3)
     c1 = zeros(size(K));
     c2 = exp(-(Ksquare*sigma^2)/pi)./(k+kc);
+end
+
+if(filter_type>0)
+    c1 = c1.*filter;
+    c2 = c2.*filter;
 end
         
 end

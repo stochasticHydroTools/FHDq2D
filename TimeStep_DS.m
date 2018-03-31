@@ -62,7 +62,7 @@ if(velMode==1) % add in convolution term
     end    
 end
 
-if(filter_type<0) 
+if(filter_type) 
     source = source.*filter;
 end
 
